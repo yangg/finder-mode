@@ -1,12 +1,20 @@
 
-(defvar lookup-limit 9999
-  "limit output of file names for locate")
+(defvar lookup-dir "~")
 
-(defvar lookup-dir "~/")
-
-(defvar lookup-omit-extensions ["jpg" "gif" "png" "log" "dat"])
+(defvar lookup-omit-extensions ["jpg" "gif" "png" "log"])
 
 (defvar lookup-omit-dirs [".git" ".svn" ".hg" "images" "log"])
+
+(defvar lookup-command "find %s -type f"
+  "Availables values are:
+find %s -type f
+cd %s && git ls-files
+locate %s -l9999
+
+create or update locate db in osx:
+sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
+sudo /usr/libexec/locate.updatedb
+")
 
 (defvar lookup-completion-buffer-name "*Lookup Completions*")
 
@@ -19,20 +27,14 @@
       (dolist (path (split-string lookup-file-text "\n"))
         (or (string-match omit-extensions path)
             (string-match omit-dirs path)
-            (progn
-              (setq filename (substring path (+ (or (search "/" path :from-end t) -1) 1)))
-              (setq lookup-filelist (vconcat lookup-filelist (vector (list path filename))))
-              )))
-      (lookup-command-hook)
-      )))
+            (setq filename (file-name-nondirectory path)
+                  lookup-filelist (vconcat lookup-filelist (vector (list path filename))))
+            ))
+      (lookup-command-hook))))
 
 (defun lookup-quote (str)
   (replace-regexp-in-string "\\\\\\*" "[^/]*"
                             (replace-regexp-in-string "\\\\\\*\\\\\\*" ".*" (regexp-quote str))))
-
-;; (setq query "/aaa.*aa")
-;; (setq query "aa")
-;; (or (and (or (search "/" query) (search "\\.\\*" query)) 0) 1)
 
 (defun lookup-command-hook ()
   (let ((query (lookup-quote (buffer-substring-no-properties (minibuffer-prompt-end) (point-max))))
@@ -57,10 +59,7 @@
     (display-buffer lookup-completion-buffer-name)))
 
 (setq lookup-file-initialized nil)
-;;;###autoload
-(defun lookup-file ()
-  (interactive)
-
+(defun lookup-init ()
   (unless lookup-file-initialized
     (setq lookup-file-keymap (make-sparse-keymap))
     (set-keymap-parent lookup-file-keymap minibuffer-local-map)
@@ -69,14 +68,17 @@
     (define-key lookup-file-keymap "\r" 'lookup-file-select)
 
     (setq lookup-dir (expand-file-name lookup-dir))
-    (setq lookup-process (start-process "lookup-file" nil "sh" "-c" (format "cd '%s' && git ls-files" lookup-dir)))
-    ;; (setq lookup-process (start-process "lookup-file" nil "sh" "-c" (format "locate '%s' -l%s" lookup-dir lookup-limit)))
-    ;; (setq lookup-process (start-process "lookup-file" nil "sh" "-c" (format "find '%s' -type f" lookup-dir)))
+    (setq lookup-process (start-process "lookup-file" nil "sh" "-c" (format lookup-command lookup-dir)))
     (setq lookup-file-text ""
           lookup-filelist [])
     (set-process-filter lookup-process 'lookup-get-filelist)
-    (setq lookup-file-initialized t))
+    (setq lookup-file-initialized t)))
 
+;;;###autoload
+(defun lookup-file ()
+  (interactive)
+
+  (lookup-init)
   (setq lookup-file-mode t)
   (add-hook 'minibuffer-setup-hook 'lookup-minibuffer-setup)
   (add-hook 'minibuffer-exit-hook 'lookup-minibuffer-exit)
@@ -101,7 +103,7 @@
     (delete-char 2)
     (setq lookup-selected-file (lookup-getline))
     (unless (eq (elt lookup-selected-file 0) ?/)
-      (setq lookup-selected-file (concat lookup-dir lookup-selected-file)))
+      (setq lookup-selected-file (concat (file-name-as-directory lookup-dir) lookup-selected-file)))
     (exit-minibuffer)))
 
 (defun lookup-getline ()
@@ -112,7 +114,6 @@
     ;; (save-excursion
     (set-buffer lookup-completion-buffer-name)
     (when delta
-      ;; (insert (format "%s" lookup-file-selected-index))
       (goto-line lookup-file-selected-index)
       (goto-char (line-beginning-position))
       (delete-char 2)

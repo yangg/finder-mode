@@ -5,6 +5,8 @@
 
 (defvar lookup-omit-dirs [".git" ".svn" ".hg" "images" "log"])
 
+(defvar lookup-omit-regexp nil)
+
 (defvar lookup-command "find %s -type f"
   "Availables values are:
 find %s -type f
@@ -27,9 +29,11 @@ sudo /usr/libexec/locate.updatedb
       (dolist (path (split-string lookup-file-text "\n"))
         (or (string-match omit-extensions path)
             (string-match omit-dirs path)
+            (and lookup-omit-regexp (string-match lookup-omit-regexp path))
             (setq filename (file-name-nondirectory path)
                   lookup-filelist (vconcat lookup-filelist (vector (list path filename))))
             ))
+      (set-buffer (window-buffer (selected-window)))
       (lookup-command-hook))))
 
 (defun lookup-quote (str)
@@ -37,10 +41,10 @@ sudo /usr/libexec/locate.updatedb
                             (replace-regexp-in-string "\\\\\\*\\\\\\*" ".*" (regexp-quote str))))
 
 (defun lookup-command-hook ()
-  (let ((query (lookup-quote (buffer-substring-no-properties (minibuffer-prompt-end) (point-max))))
+  (let ((query (lookup-quote (minibuffer-contents-no-properties)))
         (only-file nil)
         (filelist []))
-    (setq only-file (or (and (or (search "/" query) (search ".*" query)) 0) 1))
+    (setq only-file (if (or (search "/" query) (search ".*" query)) 0 1))
     (get-buffer-create lookup-completion-buffer-name)
     (set-buffer lookup-completion-buffer-name)
     (erase-buffer)

@@ -1,50 +1,48 @@
 
 (defvar lookup-dir "~")
 
-(defvar lookup-omit-extensions ["jpg" "gif" "png" "log"])
+(defvar lookup-omit-extensions ["jpg" "gif" "png" "log" "localized" "DS_Store"])
 
 (defvar lookup-omit-dirs [".git" ".svn" ".hg" "images" "log"])
 
 (defvar lookup-omit-regexp nil)
 
 (defvar lookup-command "find %s -type f"
-  "Availables values are:
+  "Available values are:
 find %s -type f
-cd %s && git ls-files
+(cd %s && git ls-files)
 locate %s -l9999
 
 create or update locate db in osx:
 sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
 sudo /usr/libexec/locate.updatedb
+or in ubuntu
+sudo updatedb
 ")
 
 (defvar lookup-completion-buffer-name "*Lookup Completions*")
 
-(defun lookup-get-filelist(process output)
-  (setq lookup-file-text (concat lookup-file-text output))
-  (when (eq (process-status lookup-process) 'exit)
-    (let ((omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote lookup-omit-extensions "\\|") "\\)$"))
-          (omit-dirs (concat "/\\(" (mapconcat 'regexp-quote lookup-omit-dirs "\\|") "\\)/"))
-          (filename nil))
-      (dolist (path (split-string lookup-file-text "\n"))
-        (or (string-match omit-extensions path)
-            (string-match omit-dirs path)
-            (and lookup-omit-regexp (string-match lookup-omit-regexp path))
-            (setq filename (file-name-nondirectory path)
-                  lookup-filelist (vconcat lookup-filelist (vector (list path filename))))
-            ))
-      (set-buffer (window-buffer (selected-window)))
-      (lookup-command-hook))))
+(defun lookup-get-filelist(output)
+  (setq lookup-filelist [])
+  (let ((omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote lookup-omit-extensions "\\|") "\\)$"))
+        (omit-dirs (concat "/\\(" (mapconcat 'regexp-quote lookup-omit-dirs "\\|") "\\)/"))
+        (filename nil))
+    (dolist (path (split-string output "\n"))
+      (or (string-match omit-extensions path)
+          (string-match omit-dirs path)
+          (and lookup-omit-regexp (string-match lookup-omit-regexp path))
+          (setq filename (file-name-nondirectory path)
+                lookup-filelist (vconcat lookup-filelist (vector (list path filename))))
+          ))))
 
 (defun lookup-quote (str)
   (replace-regexp-in-string "\\\\\\*" "[^/]*"
                             (replace-regexp-in-string "\\\\\\*\\\\\\*" ".*" (regexp-quote str))))
 
 (defun lookup-command-hook ()
-  (let ((query (lookup-quote (minibuffer-contents-no-properties)))
-        (only-file nil)
+  (let* ((query (lookup-quote (minibuffer-contents-no-properties)))
+        (only-file (if (or (search "/" query) (search ".*" query)) 0 1))
         (filelist []))
-    (setq only-file (if (or (search "/" query) (search ".*" query)) 0 1))
     (get-buffer-create lookup-completion-buffer-name)
     (set-buffer lookup-completion-buffer-name)
     (erase-buffer)
@@ -72,10 +70,7 @@ sudo /usr/libexec/locate.updatedb
     (define-key lookup-file-keymap "\r" 'lookup-file-select)
 
     (setq lookup-dir (expand-file-name lookup-dir))
-    (setq lookup-process (start-process "lookup-file" nil "sh" "-c" (format lookup-command lookup-dir)))
-    (setq lookup-file-text ""
-          lookup-filelist [])
-    (set-process-filter lookup-process 'lookup-get-filelist)
+    (lookup-get-filelist (shell-command-to-string (format lookup-command lookup-dir)))
     (setq lookup-file-initialized t)))
 
 ;;;###autoload

@@ -1,0 +1,16 @@
+# lookup-file
+Lookup file plugin for emacs
+
+## Configuration
+add to your .emacs or init.el file.
+
+    (require 'lookup-file)
+    (setq lookup-dir "/path/to/your/project")
+    (global-set-key "" 'lookup-file)
+    
+## Usage
+
+* `C-n` and `C-p` to select next or previous matched file.
+* `<RET>` to open the selected file
+* The `**` matches anything, `*` matches anything except `/`(the path separator).
+* By default the finder only show the matched file name(without its leading directory path) you typed in the minibuffer. However if your typed `/` or `**` in the minibuffer, the finder can also show the matched full path.

@@ -22,9 +22,12 @@ sudo updatedb
 
 (defvar lookup-completion-buffer-name "*Lookup Completions*")
 
-(defun lookup-get-filelist(output)
-  (setq lookup-filelist [])
-  (let ((omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote lookup-omit-extensions "\\|") "\\)$"))
+(defun lookup-file-get-list()
+  (interactive)
+  (setq lookup-dir (expand-file-name lookup-dir)
+        lookup-filelist [])
+  (let ((output (shell-command-to-string (format lookup-command lookup-dir)))
+        (omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote lookup-omit-extensions "\\|") "\\)$"))
         (omit-dirs (concat "/\\(" (mapconcat 'regexp-quote lookup-omit-dirs "\\|") "\\)/"))
         (filename nil))
     (dolist (path (split-string output "\n"))
@@ -67,10 +70,10 @@ sudo updatedb
     (set-keymap-parent lookup-file-keymap minibuffer-local-map)
     (define-key lookup-file-keymap "\C-n" 'lookup-file-next)
     (define-key lookup-file-keymap "\C-p" 'lookup-file-previous)
+    (define-key lookup-file-keymap "\C-r" 'lookup-file-get-list)
     (define-key lookup-file-keymap "\r" 'lookup-file-select)
 
-    (setq lookup-dir (expand-file-name lookup-dir))
-    (lookup-get-filelist (shell-command-to-string (format lookup-command lookup-dir)))
+    (lookup-file-get-list)
     (setq lookup-file-initialized t)))
 
 ;;;###autoload

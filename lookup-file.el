@@ -104,7 +104,7 @@ sudo updatedb
     (goto-char (line-beginning-position))
     (delete-char 2)
     (setq lookup-selected-file (lookup-getline))
-    (unless (eq (elt lookup-selected-file 0) ?/)
+    (unless (string-match "^/\\|^[a-z]:" lookup-selected-file)
       (setq lookup-selected-file (concat (file-name-as-directory lookup-dir) lookup-selected-file)))
     (exit-minibuffer)))
 

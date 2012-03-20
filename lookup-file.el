@@ -1,9 +1,13 @@
+;;; lookup-file.el --- A file finder for Emacs
+
+;; Author: uedsky
+;; Keywords: file finder
 
 (defvar lookup-dir "~")
 
 (defvar lookup-omit-extensions ["jpg" "gif" "png" "log" "localized" "DS_Store"])
 
-(defvar lookup-omit-dirs [".git" ".svn" ".hg" "images" "log"])
+(defvar lookup-omit-files [".git" ".svn" ".hg" "images" "log"])
 
 (defvar lookup-omit-regexp nil)
 
@@ -28,11 +32,11 @@ sudo updatedb
         lookup-filelist [])
   (let ((output (shell-command-to-string (format lookup-command lookup-dir)))
         (omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote lookup-omit-extensions "\\|") "\\)$"))
-        (omit-dirs (concat "/\\(" (mapconcat 'regexp-quote lookup-omit-dirs "\\|") "\\)/"))
+        (omit-files (concat "\\(/\\|^\\)\\(" (mapconcat 'regexp-quote lookup-omit-files "\\|") "\\)\\(/\\|$\\)"))
         (filename nil))
     (dolist (path (split-string output "\n"))
       (or (string-match omit-extensions path)
-          (string-match omit-dirs path)
+          (string-match omit-files path)
           (and lookup-omit-regexp (string-match lookup-omit-regexp path))
           (setq filename (file-name-nondirectory path)
                 lookup-filelist (vconcat lookup-filelist (vector (list path filename))))

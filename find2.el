@@ -3,7 +3,9 @@
 ;; Author: uedsky
 ;; Keywords: file finder
 
-(defvar find2-dir "~")
+(defvar find2-default-dir "~")
+
+(defvar find2-global-map "\C-xc")
 
 (defvar find2-omit-extensions ["jpg" "gif" "png" "log" "localized" "DS_Store"])
 
@@ -11,28 +13,35 @@
 
 (defvar find2-omit-regexp nil)
 
-(defvar find2-command "find %s -type f"
-  "Available values are:
-find %s -type f
-(cd %s && git ls-files)")
-
 (defvar find2-completion-buffer-name "*Find2 Completions*")
 
-(defun find2-get-list()
+(defvar find2-projects (make-hash-table :test 'equal))
+
+(defun find2-shell-no-eof (cmd)
+  (let ((output (shell-command-to-string cmd)))
+    (substring output 0 (- (length output) 1))))
+
+(defun find2-get-project-root ()
+  (if (equal (find2-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
+      (find2-shell-no-eof "git rev-parse --show-toplevel")
+    (expand-file-name find2-default-dir))
+  )
+
+(defun find2-get-project-files ()
   (interactive)
-  (setq find2-dir (expand-file-name find2-dir)
-        find2list [])
-  (let ((output (shell-command-to-string (format find2-command find2-dir)))
+  (let ((output (shell-command-to-string (format "cd %s && git ls-files" find2-project-root)))
         (omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote find2-omit-extensions "\\|") "\\)$"))
         (omit-files (concat "\\(/\\|^\\)\\(" (mapconcat 'regexp-quote find2-omit-files "\\|") "\\)\\(/\\|$\\)"))
+        (filelist [])
         (filename nil))
     (dolist (path (split-string output "\n"))
       (or (string-match omit-files path)
           (string-match omit-extensions path)
           (and find2-omit-regexp (string-match find2-omit-regexp path))
           (setq filename (file-name-nondirectory path)
-                find2list (vconcat find2list (vector (list path filename))))
-          ))))
+                filelist (vconcat filelist (vector (list path filename))))
+          ))
+    (puthash find2-project-root filelist find2-projects)))
 
 (defun find2-quote (str)
   (replace-regexp-in-string "\\\\\\*" "[^/]*"
@@ -49,7 +58,7 @@ find %s -type f
              (let ((path (elt file 0)))
                (when (string-match query (elt file only-file))
                  (setq filelist (append filelist (list path)))
-                 ))) find2list)
+                 ))) (gethash find2-project-root find2-projects))
     (insert (mapconcat 'identity filelist "\n"))
     (setq find2-selected-index nil)
     (goto-char (point-min))
@@ -68,10 +77,9 @@ find %s -type f
     (define-key find2-keymap "\C-p" 'find2-previous)
     (define-key find2-keymap [down] 'find2-next)
     (define-key find2-keymap [up] 'find2-previous)
-    (define-key find2-keymap "\C-r" 'find2-get-list)
+    (define-key find2-keymap "\C-r" 'find2-get-project-files)
     (define-key find2-keymap "\r" 'find2-select)
 
-    (find2-get-list)
     (setq find2-initialized t)))
 
 ;;;###autoload
@@ -79,7 +87,10 @@ find %s -type f
   (interactive)
 
   (find2-init)
-  (setq find2-mode t)
+  (setq find2-mode t
+        find2-project-root (find2-get-project-root))
+  (unless (gethash find2-project-root find2-projects)
+    (find2-get-project-files))
   (add-hook 'minibuffer-setup-hook 'find2-minibuffer-setup)
   (add-hook 'minibuffer-exit-hook 'find2-minibuffer-exit)
   (read-string ">>> ")
@@ -142,5 +153,8 @@ find %s -type f
   (when find2-mode
     (use-local-map (keymap-parent find2-keymap))
     (setq find2-mode nil)))
+
+(when find2-global-map
+  (global-set-key find2-global-map 'find2))
 
 (provide 'find2)

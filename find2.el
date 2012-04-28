@@ -7,7 +7,7 @@
 
 (defvar find2-default-command
   (if (eq system-type 'window-nt)
-      "dir \"%s\" /b /s /a-d"
+      "dir \"%s\" /-n /b /s /a-d"
     "find \"%s\" -type f"))
 
 (defvar find2-global-map "\C-xc")
@@ -162,4 +162,4 @@
 (when find2-global-map
   (global-set-key find2-global-map 'find2))
 
-(provide 'find2-mode)
+(provide 'find2)

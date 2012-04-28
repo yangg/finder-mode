@@ -3,7 +3,12 @@
 ;; Author: uedsky
 ;; Keywords: file finder
 
-(defvar find2-default-dir "~")
+(defvar find2-default-dir ".")
+
+(defvar find2-default-command
+  (if (eq system-type 'window-nt)
+      "dir \"%s\" /b /s /a-d"
+    "find \"%s\" -type f"))
 
 (defvar find2-global-map "\C-xc")
 
@@ -23,13 +28,14 @@
 
 (defun find2-get-project-root ()
   (if (equal (find2-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
-      (find2-shell-no-eof "git rev-parse --show-toplevel")
-    (expand-file-name find2-default-dir))
-  )
+      (setq find2-project-root (find2-shell-no-eof "git rev-parse --show-toplevel")
+            find2-project-command (format "cd \"%s\" && git ls-files" find2-project-root))
+    (setq find2-project-root (expand-file-name find2-default-dir)
+          find2-project-command (format find2-default-command find2-project-root))))
 
 (defun find2-get-project-files ()
   (interactive)
-  (let ((output (shell-command-to-string (format "cd %s && git ls-files" find2-project-root)))
+  (let ((output (shell-command-to-string find2-project-command))
         (omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote find2-omit-extensions "\\|") "\\)$"))
         (omit-files (concat "\\(/\\|^\\)\\(" (mapconcat 'regexp-quote find2-omit-files "\\|") "\\)\\(/\\|$\\)"))
         (filelist [])
@@ -45,7 +51,7 @@
 
 (defun find2-quote (str)
   (replace-regexp-in-string "\\\\\\*" "[^/]*"
-                            (replace-regexp-in-string "\\\\\\*\\\\\\*" ".*" (regexp-quote str))))
+                            (replace-regexp-in-string " " ".*" (regexp-quote str))))
 
 (defun find2-command-hook ()
   (let* ((query (find2-quote (minibuffer-contents-no-properties)))
@@ -77,7 +83,7 @@
     (define-key find2-keymap "\C-p" 'find2-previous)
     (define-key find2-keymap [down] 'find2-next)
     (define-key find2-keymap [up] 'find2-previous)
-    (define-key find2-keymap "\C-r" 'find2-get-project-files)
+    (define-key find2-keymap [f5] 'find2-get-project-files)
     (define-key find2-keymap "\r" 'find2-select)
 
     (setq find2-initialized t)))
@@ -87,8 +93,8 @@
   (interactive)
 
   (find2-init)
-  (setq find2-mode t
-        find2-project-root (find2-get-project-root))
+  (setq find2-mode t)
+  (find2-get-project-root)
   (unless (gethash find2-project-root find2-projects)
     (find2-get-project-files))
   (add-hook 'minibuffer-setup-hook 'find2-minibuffer-setup)
@@ -114,7 +120,7 @@
     (delete-char 2)
     (setq find2-selected-file (find2-getline))
     (unless (string-match "^/\\|^[a-z]:" find2-selected-file)
-      (setq find2-selected-file (concat (file-name-as-directory find2-dir) find2-selected-file)))
+      (setq find2-selected-file (concat (file-name-as-directory find2-project-root) find2-selected-file)))
     (exit-minibuffer)))
 
 (defun find2-getline ()
@@ -146,8 +152,7 @@
 (defun find2-minibuffer-setup ()
   (when find2-mode
     (add-hook 'post-command-hook 'find2-command-hook nil t)
-    (use-local-map find2-keymap)
-    ))
+    (use-local-map find2-keymap)))
 
 (defun find2-minibuffer-exit ()
   (when find2-mode
@@ -157,4 +162,4 @@
 (when find2-global-map
   (global-set-key find2-global-map 'find2))
 
-(provide 'find2)
+(provide 'find2-mode)

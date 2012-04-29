@@ -1,5 +1,5 @@
-# lookup-file
-A File finder for emacs, find file in project.
+# Find2
+A File finder for emacs, find files in git/hg project.
 
 ## Configuration
 add to your .emacs or init.el file.
@@ -9,7 +9,7 @@ add to your .emacs or init.el file.
 
 ## Usage
 
-* Press `C-x c` will call function `find2` to find all the files in your git project or `find2-default-dir`
+* Press `C-x c` will call function `find2` to find all the files in your git/hg project or `find2-default-dir`
 * `C-n` and `C-p` to select next or previous matched file.
 * `<RET>` to open the selected file
 * `<f5>` reload filelist(apply new omit rules)

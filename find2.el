@@ -6,7 +6,7 @@
 (defvar find2-default-dir ".")
 
 (defvar find2-default-command
-  (if (eq system-type 'window-nt)
+  (if (eq system-type 'windows-nt)
       "dir \"%s\" /-n /b /s /a-d"
     "find \"%s\" -type f"))
 
@@ -44,13 +44,16 @@
         (omit-files (concat "\\(/\\|^\\)\\(" (mapconcat 'regexp-quote find2-omit-files "\\|") "\\)\\(/\\|$\\)"))
         (filelist [])
         (filename nil))
+    ;; preprocessing the directory separator for `dir' command in windows
+    (if (and (eq system-type 'windows-nt)
+             (equal (substring find2-project-command 0 3) "dir"))
+        (setq output (replace-regexp-in-string "\\\\" "/" output)))
     (dolist (path (split-string output "\n"))
       (or (string-match omit-files path)
           (string-match omit-extensions path)
           (and find2-omit-regexp (string-match find2-omit-regexp path))
           (setq filename (file-name-nondirectory path)
-                filelist (vconcat filelist (vector (list path filename))))
-          ))
+                filelist (vconcat filelist (vector (list path filename))))))
     (puthash find2-project-root filelist find2-projects)))
 
 (defun find2-quote (str)

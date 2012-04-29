@@ -1,4 +1,4 @@
-;;; find2.el --- A file finder for Emacs
+;;; find2.el --- A file finder for Emacs, find file in project
 
 ;; Author: uedsky
 ;; Keywords: file finder

@@ -15,3 +15,11 @@ add to your .emacs or init.el file.
 * `<f5>` reload filelist(apply new omit rules)
 * The `" "` (white-space) matches anything, `*` matches anything except `/`(the path separator).
 * By default the finder only show the matched file name(without its leading directory path) you typed in the minibuffer. However if your typed `/` or `" "` in the minibuffer, the finder can also show the matched full path.
+
+## Screenshots
+
+![run the command](https://raw.github.com/yangg/find2.el/master/screenshots/run-the-command.jpg)
+
+![show all files in the project](https://raw.github.com/yangg/find2.el/master/screenshots/show-all-files-in-the-project.jpg)
+
+![show matched files](https://raw.github.com/yangg/find2.el/master/screenshots/show-matched-files.jpg)

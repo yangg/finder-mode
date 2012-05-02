@@ -7,8 +7,8 @@
 
 (defvar find2-default-command
   (if (eq system-type 'windows-nt)
-      "dir \"%s\" /-n /b /s /a-d"
-    "find \"%s\" -type f"))
+      "dir %s /-n /b /s /a-d"
+    "find %s -type f"))
 
 (defvar find2-global-map "\C-xc")
 
@@ -27,18 +27,22 @@
     (substring output 0 -1)))
 
 (defun find2-get-project-root ()
+  (setq find2-project-root nil
+        find2-project-command nil)
   (if (equal (find2-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
       (setq find2-project-root (find2-shell-no-eof "git rev-parse --show-toplevel")
-            find2-project-command "cd \"%s\" && git ls-files")
-    (setq find2-project-root (find2-shell-no-eof "hg root || echo __abort__"))
-    (if (string-match "__abort__" find2-project-root)
-        (progn (setq find2-project-root nil)
-               (run-hooks 'find2-custom-project-hook)
-               (or find2-project-root
-                   (setq find2-project-root (expand-file-name find2-default-dir)
-                         find2-project-command find2-default-command)))
-      (setq find2-project-command "hg --cwd \"%s\" locate")))
-  (setq find2-project-command (format find2-project-command find2-project-root)))
+            find2-project-command "cd %s && git ls-files")
+    (let ((hg-root (find2-shell-no-eof "hg root || echo __abort__")))
+      (if (not (string-match "__abort__" hg-root))
+          (setq find2-project-root hg-root
+                find2-project-command "hg --cwd %s locate")
+        (run-hooks 'find2-custom-project-hook)
+        (unless find2-project-root
+          (setq find2-project-root (expand-file-name find2-default-dir)))
+        (unless find2-project-command
+          (setq find2-project-command find2-default-command)))))
+  (run-hooks 'find2-before-set-command-hook)
+  (setq find2-project-command (format find2-project-command (shell-quote-argument find2-project-root))))
 
 (defun find2-get-project-files ()
   (interactive)

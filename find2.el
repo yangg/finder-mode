@@ -32,8 +32,11 @@
             find2-project-command "cd \"%s\" && git ls-files")
     (setq find2-project-root (find2-shell-no-eof "hg root || echo __abort__"))
     (if (string-match "__abort__" find2-project-root)
-        (setq find2-project-root (expand-file-name find2-default-dir)
-              find2-project-command find2-default-command)
+        (progn (setq find2-project-root nil)
+               (run-hooks 'find2-custom-project-hook)
+               (or find2-project-root
+                   (setq find2-project-root (expand-file-name find2-default-dir)
+                         find2-project-command find2-default-command)))
       (setq find2-project-command "hg --cwd \"%s\" locate")))
   (setq find2-project-command (format find2-project-command find2-project-root)))
 

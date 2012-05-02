@@ -1,5 +1,5 @@
 # Find2
-A File finder for emacs, find files in git/hg project.
+A File finder for emacs, find files in git/hg/svn1.7+ project.
 
 ## Configuration
 add to your .emacs or init.el file.

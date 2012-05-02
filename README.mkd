@@ -11,10 +11,10 @@ add to your .emacs or init.el file.
 
 * Press `C-x c` will call function `find2` to find all the files in your git/hg project or `find2-default-dir`
 * `C-n` and `C-p` to select next or previous matched file.
-* `<RET>` to open the selected file
-* `<f5>` reload filelist(apply new omit rules)
+* `<RET>` to open the selected file.
+* `C-r` purge the cache for the current project and get new files.
 * The `" "` (white-space) matches anything, `*` matches anything except `/`(the path separator).
-* By default the finder only show the matched file name(without its leading directory path) you typed in the minibuffer. However if your typed `/` or `" "` in the minibuffer, the finder can also show the matched full path.
+* By default the finder only show the matched file name(without its leading directory path) you typed in the minibuffer. However if you typed `/` or `" "` in the minibuffer, the finder can also show the matched full path.
 
 ## Screenshots
 

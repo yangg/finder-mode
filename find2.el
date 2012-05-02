@@ -24,7 +24,7 @@
 
 (defun find2-shell-no-eof (cmd)
   (let ((output (shell-command-to-string cmd)))
-    (substring output 0 (- (length output) 1))))
+    (substring output 0 -1)))
 
 (defun find2-get-project-root ()
   (if (equal (find2-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
@@ -90,7 +90,7 @@
     (define-key find2-keymap "\C-p" 'find2-previous)
     (define-key find2-keymap [down] 'find2-next)
     (define-key find2-keymap [up] 'find2-previous)
-    (define-key find2-keymap [f5] 'find2-get-project-files)
+    (define-key find2-keymap "\C-r" 'find2-get-project-files)
     (define-key find2-keymap "\r" 'find2-select)
 
     (setq find2-initialized t)))

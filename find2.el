@@ -12,9 +12,9 @@
 
 (defvar find2-global-map "\C-xc")
 
-(defvar find2-omit-extensions ["jpg" "gif" "png" "log" "localized" "DS_Store"])
+(defvar find2-omit-extensions '("jpg" "gif" "png" "log" "localized" "DS_Store"))
 
-(defvar find2-omit-files [".git" ".svn" ".hg" "images" "log"])
+(defvar find2-omit-files '(".git" ".svn" ".hg" "images" "log"))
 
 (defvar find2-omit-regexp nil)
 
@@ -49,8 +49,7 @@
   (let ((output (shell-command-to-string find2-project-command))
         (omit-extensions (concat "\\.\\(" (mapconcat 'regexp-quote find2-omit-extensions "\\|") "\\)$"))
         (omit-files (concat "\\(/\\|^\\)\\(" (mapconcat 'regexp-quote find2-omit-files "\\|") "\\)\\(/\\|$\\)"))
-        (filelist [])
-        (filename nil))
+        (filelist nil))
     ;; preprocessing the directory separator for `dir' command in windows
     (if (and (eq system-type 'windows-nt)
              (equal (substring find2-project-command 0 3) "dir"))
@@ -59,8 +58,7 @@
       (or (string-match omit-files path)
           (string-match omit-extensions path)
           (and find2-omit-regexp (string-match find2-omit-regexp path))
-          (setq filename (file-name-nondirectory path)
-                filelist (vconcat filelist (vector (list path filename))))))
+          (setq filelist (cons (list path (file-name-nondirectory path)) filelist))))
     (puthash find2-project-root filelist find2-projects)))
 
 (defun find2-quote (str)
@@ -69,16 +67,14 @@
 
 (defun find2-command-hook ()
   (let* ((query (find2-quote (minibuffer-contents-no-properties)))
-        (only-file (if (or (search "/" query) (search ".*" query)) 0 1))
-        (filelist []))
+        (only-file (if (string-match "/\\|\\.\\*" query) 0 1))
+        (filelist nil))
     (get-buffer-create find2-completion-buffer-name)
     (set-buffer find2-completion-buffer-name)
     (erase-buffer)
-    (mapc '(lambda(file)
-             (let ((path (elt file 0)))
-               (when (string-match query (elt file only-file))
-                 (setq filelist (append filelist (list path)))
-                 ))) (gethash find2-project-root find2-projects))
+    (dolist (file (gethash find2-project-root find2-projects))
+      (if (string-match query (elt file only-file))
+        (setq filelist (cons (car file) filelist))))
     (insert (mapconcat 'identity filelist "\n"))
     (setq find2-selected-index nil)
     (goto-char (point-min))

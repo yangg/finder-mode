@@ -2,9 +2,9 @@
 
 (add-hook 'find2-custom-project-hook
           '(lambda ()
-             (let ((svn-info (shell-command-to-string "svn info")))
-               (when (string-match "Working Copy Root Path: \\([^\n]*\\)" svn-info)
-                 (setq find2-project-root (match-string 1 svn-info)
-                       find2-project-command "svn list -R %s")))))
+             (unless find2-project-root
+               (let ((svn-info (shell-command-to-string "svn info")))
+                 (if (string-match "Working Copy Root Path: \\([^\n]*\\)" svn-info)
+                     (setq find2-project-root (match-string 1 svn-info)))))))
 
 (provide 'find2-svn)

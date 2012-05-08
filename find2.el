@@ -35,13 +35,12 @@
     (let ((hg-root (find2-shell-no-eof "hg root || echo __abort__")))
       (if (not (string-match "__abort__" hg-root))
           (setq find2-project-root hg-root
-                find2-project-command "hg --cwd %s locate")
-        (run-hooks 'find2-custom-project-hook)
-        (unless find2-project-root
-          (setq find2-project-root (expand-file-name find2-default-dir)))
-        (unless find2-project-command
-          (setq find2-project-command find2-default-command)))))
+                find2-project-command "hg --cwd %s locate"))))
   (run-hooks 'find2-before-set-command-hook)
+  (unless find2-project-root
+    (setq find2-project-root (expand-file-name find2-default-dir)))
+  (unless find2-project-command
+    (setq find2-project-command find2-default-command))
   (setq find2-project-command (format find2-project-command (shell-quote-argument find2-project-root))))
 
 (defun find2-get-project-files ()

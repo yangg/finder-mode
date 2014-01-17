@@ -4,22 +4,15 @@ A File finder for emacs, find files in git/hg/svn1.7+ project.
 ## Configuration
 add to your .emacs or init.el file.
 
-    (add-to-list 'load-path "/path/to/find2.el")
-    (require 'find2)
+    (add-to-list 'load-path "/path/to/finder-mode.el")
+    (require 'finder-mode)
 
 ## Usage
 
-* Press `C-x c` will call function `find2` to find all the files in your git/hg project or `find2-default-dir`
+* Press `C-x c` will call function `finder-mode` to find all the files in your git/hg project or `find2-default-dir`
 * `C-n` and `C-p` to select next or previous matched file.
 * `<RET>` to open the selected file.
 * `C-r` purge the cache for the current project and get new files.
-* The `" "` (white-space) matches anything, `*` matches anything except `/`(the path separator).
+* The `" "` (white-space) matches anything
 * By default the finder only show the matched file name(without its leading directory path) you typed in the minibuffer. However if you typed `/` or `" "` in the minibuffer, the finder can also show the matched full path.
 
-## Screenshots
-
-![run the command](https://raw.github.com/yangg/find2.el/master/screenshots/run-the-command.jpg)
-
-![show all files in the project](https://raw.github.com/yangg/find2.el/master/screenshots/show-all-files-in-the-project.jpg)
-
-![show matched files](https://raw.github.com/yangg/find2.el/master/screenshots/show-matched-files.jpg)

@@ -4,21 +4,17 @@
 ;; Keywords: file finder
 
 (defvar finder-default-dir ".")
+(defvar finder-omit-extensions '("log" "localized" "DS_Store"))
+(defvar finder-omit-files '(".git" ".svn" ".hg"))
+(defvar finder-omit-regexp nil)
+(defvar finder-project-files '(".git" ".hg" ".svn"))
 
 (defvar finder-default-command
   (if (eq system-type 'windows-nt)
       "dir %s /-n /b /s /a-d"
     "find %s -type f"))
-
-(defvar finder-omit-extensions '("jpg" "gif" "png" "log" "localized" "DS_Store"))
-
-(defvar finder-omit-files '(".git" ".svn" ".hg"))
-
-(defvar finder-omit-regexp nil)
-
-(defvar finder-completion-buffer-name "*Finder Completions*")
-
 (defvar finder-projects (make-hash-table :test 'equal))
+(defvar finder-completion-buffer-name "*Finder Completions*")
 
 (defun finder-shell-no-eof (cmd)
   (let ((output (shell-command-to-string cmd)))
@@ -26,19 +22,30 @@
 
 (defun finder-get-project-root ()
   (setq finder-project-root nil
-        finder-project-command nil)
-  (if (equal (finder-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
-      (setq finder-project-root (finder-shell-no-eof "git rev-parse --show-toplevel")
-            finder-project-command "cd %s && git ls-files")
-    (let ((hg-root (finder-shell-no-eof "hg root || echo __abort__")))
-      (if (not (string-match "__abort__" hg-root))
-          (setq finder-project-root hg-root
-                finder-project-command "hg --cwd %s locate"))))
-  (run-hooks 'finder-before-set-command-hook)
+        finder-project-command finder-default-command)
+  (cond ((equal (finder-shell-no-eof "git rev-parse --is-inside-work-tree") "true")
+         (setq finder-project-root (finder-shell-no-eof "git rev-parse --show-toplevel")
+               finder-project-command "cd %s && git ls-files"))
+        ((let ((finder-project-root (finder-shell-no-eof "hg root || echo __error__")))
+           (if (string-match "__error__" finder-project-root)
+               (setq finder-project-root nil)
+             t))
+         (setq finder-project-command "hg --cwd %s locate"))
+        ;; find project root by checking finder-project-files's exsitence
+        (t (let ((path default-directory))
+             (while (and (not finder-project-root) path)
+               (dolist (file finder-project-files)
+                 (when (file-exists-p (concat path file))
+                   (setq finder-project-root path)
+                   (return)))
+               ;; root of the filesystem
+               (if (string-match "^\\([a-z]:\\)?/$" path)
+                   (setq path nil)
+                 (setq path (file-name-directory (directory-file-name path))))))))
+
   (unless finder-project-root
     (setq finder-project-root (expand-file-name finder-default-dir)))
-  (unless finder-project-command
-    (setq finder-project-command finder-default-command))
+  
   (setq finder-project-command (format finder-project-command (shell-quote-argument finder-project-root))))
 
 (defun finder-get-project-files ()

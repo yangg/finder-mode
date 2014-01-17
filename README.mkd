@@ -4,7 +4,7 @@ A File finder for emacs, find files in git/hg/svn1.7+ project.
 ## Configuration
 add to your .emacs or init.el file.
 
-    (add-to-list 'load-path "/path/to/finder-mode.el")
+    (add-to-list 'load-path "/path/to/finder-mode")
     (autoload 'finder-mode "finder-mode" "Find files in project" t)
     ;; or
     ;; (require 'finder-mode)

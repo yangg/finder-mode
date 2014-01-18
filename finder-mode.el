@@ -4,7 +4,7 @@
 ;; Keywords: file finder
 
 (defvar finder-default-dir ".")
-(defvar finder-omit-extensions '("log" "localized" "DS_Store"))
+(defvar finder-omit-extensions '("png" "jpg" "gif" "log" "localized" "DS_Store"))
 (defvar finder-omit-files '(".git" ".svn" ".hg"))
 (defvar finder-omit-regexp nil)
 (defvar finder-project-files '(".git" ".hg" ".svn"))
@@ -33,15 +33,16 @@
          (setq finder-project-command "hg --cwd %s locate"))
         ;; find project root by checking finder-project-files's exsitence
         (t (let ((path default-directory))
-             (while (and (not finder-project-root) path)
-               (dolist (file finder-project-files)
-                 (when (file-exists-p (concat path file))
-                   (setq finder-project-root path)
-                   (return)))
-               ;; root of the filesystem
-               (if (string-match "^\\([a-z]:\\)?/$" path)
-                   (setq path nil)
-                 (setq path (file-name-directory (directory-file-name path))))))))
+             (catch 'loop
+               (while path
+                 (dolist (file finder-project-files)
+                   (when (file-exists-p (concat path file))
+                     (setq finder-project-root path)
+                     (throw 'loop nil)))
+                 ;; root of the filesystem
+                 (if (string-match "^\\([a-z]:\\)?/$" path)
+                     (setq path nil)
+                   (setq path (file-name-directory (directory-file-name path)))))))))
 
   (unless finder-project-root
     (setq finder-project-root (expand-file-name finder-default-dir)))
